@@ -69,6 +69,11 @@ final class PlayerViewModel {
         set { coordinator.repeatMode = newValue }
     }
 
+    var isShuffleEnabled: Bool {
+        get { coordinator.isShuffleEnabled }
+        set { coordinator.isShuffleEnabled = newValue }
+    }
+
     var volume: Double {
         get { coordinator.volume }
         set { coordinator.volume = newValue }
@@ -167,6 +172,10 @@ final class PlayerViewModel {
 
     func toggleRepeatMode() {
         coordinator.toggleRepeatMode()
+    }
+
+    func toggleShuffleMode() {
+        coordinator.toggleShuffleMode()
     }
 
     @discardableResult

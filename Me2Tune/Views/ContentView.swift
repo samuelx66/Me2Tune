@@ -99,6 +99,7 @@ struct ContentView: View {
         let canGoPrevious = viewModel.canGoPrevious
         let canGoNext = viewModel.canGoNext
         let repeatMode = viewModel.repeatMode
+        let isShuffleEnabled = viewModel.isShuffleEnabled
         let isRestoring = viewModel.isRestoring
         
         return VStack(spacing: 0) {
@@ -135,12 +136,14 @@ struct ContentView: View {
                 canGoPrevious: canGoPrevious,
                 canGoNext: canGoNext,
                 repeatMode: repeatMode,
+                isShuffleEnabled: isShuffleEnabled,
                 isRestoring: isRestoring,
                 onPlayPause: viewModel.togglePlayPause,
                 onPrevious: viewModel.previous,
                 onNext: viewModel.next,
                 onSeek: viewModel.seek,
                 onToggleRepeat: viewModel.toggleRepeatMode,
+                onToggleShuffle: viewModel.toggleShuffleMode,
                 volume: $viewModel.volume
             )
             .fixedSize(horizontal: false, vertical: true)

@@ -14,6 +14,7 @@ struct ControlSectionView: View {
     let canGoPrevious: Bool
     let canGoNext: Bool
     let repeatMode: PlayerViewModel.RepeatMode
+    var isShuffleEnabled: Bool = false
     var isRestoring: Bool = false
     
     let onPlayPause: () -> Void
@@ -21,6 +22,7 @@ struct ControlSectionView: View {
     let onNext: () -> Void
     let onSeek: (TimeInterval) -> Void
     let onToggleRepeat: () -> Void
+    var onToggleShuffle: () -> Void = {}
     
     @Binding var volume: Double
     
@@ -143,12 +145,13 @@ struct ControlSectionView: View {
         }
     }
     
-    // MARK: - Settings Controls (Repeat + Volume + Mini Switch)
+    // MARK: - Settings Controls (Repeat + Shuffle + Volume + Mini Switch)
     
     private var settingsControls: some View {
         HStack(spacing: 12) {
             switchToMiniButton
             volumeControl
+            shuffleButton
             repeatButton
         }
     }
@@ -209,6 +212,22 @@ struct ControlSectionView: View {
 
     private var rotationAngle: Double {
         repeatMode == .off ? 0 : 180
+    }
+    
+    // MARK: - Shuffle Button
+
+    private var shuffleButton: some View {
+        Button(action: {
+            onToggleShuffle()
+        }) {
+            Image(systemName: "shuffle")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(isShuffleEnabled ? .accent : .secondaryText)
+                .frame(width: 28, height: 28)
+        }
+        .buttonStyle(.plain)
+        .help(isShuffleEnabled ? LocalizedStringKey("shuffle_mode_on") : LocalizedStringKey("shuffle_mode_off"))
+        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: isShuffleEnabled)
     }
     
     // MARK: - Volume Control
