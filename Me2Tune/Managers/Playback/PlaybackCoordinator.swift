@@ -239,6 +239,10 @@ final class PlaybackCoordinator {
                 self.statisticsTracker.evaluate(currentTime: time, duration: self.duration)
             }
         )
+        effectsController.ensureRemoteCommandsReady(handlers: makePlaybackCommandHandlers())
+        if hasSessionSnapshot || !playlistManager.isEmpty {
+            NowPlayingService.shared.setPlaceholderInfo()
+        }
         logger.debug("PlaybackCoordinator initialized")
     }
 
@@ -410,6 +414,7 @@ final class PlaybackCoordinator {
             if isShuffleEnabled {
                 shuffleController.handleTracksAdded(newTracks: playlistManager.tracks)
             }
+            effectsController.ensureRemoteCommandsReady(handlers: makePlaybackCommandHandlers())
         }
         return result
     }
