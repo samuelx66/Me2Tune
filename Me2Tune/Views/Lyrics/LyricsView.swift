@@ -87,7 +87,7 @@ struct LyricsView: View {
                     .frame(maxHeight: .infinity)
             }
         }
-        .frame(width: 440, height: 800)
+        .frame(width: 440, height: 750)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showLyricsSettings)
         .contextMenu {
             @Bindable var settings = SettingsManager.shared

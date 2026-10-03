@@ -15,12 +15,21 @@ private let logger = Logger.lyrics
 final class LyricsWindowController {
     static let shared = LyricsWindowController()
     
-    private var window: NSWindow?
+    private var window: LyricsWindow?
+    private var dockCoordinator: LyricsWindowDockCoordinator?
     private weak var playerViewModel: PlayerViewModel?
     
     private init() {}
     
-    // MARK: - Public Methods
+    // MARK: - Public Properties & Methods
+    
+    var isDocked: Bool {
+        dockCoordinator?.isDocked ?? false
+    }
+    
+    func undockIfDocked() {
+        dockCoordinator?.undock()
+    }
     
     func setup(playerViewModel: PlayerViewModel) {
         self.playerViewModel = playerViewModel
@@ -42,21 +51,30 @@ final class LyricsWindowController {
     }
     
     func close() {
+        dockCoordinator?.cleanup()
+        dockCoordinator = nil
         window?.close()
         window = nil
     }
     
     // MARK: - Private Methods
     
+    private func resolveMainWindow() -> NSWindow? {
+        if let window = (NSApp.delegate as? AppDelegate)?.fullModeWindow {
+            return window
+        }
+        return NSApp.windows.first { !($0 is NSPanel) && $0.identifier?.rawValue == "main" }
+    }
+    
     private func createWindow(playerViewModel: PlayerViewModel) {
         let contentView = LyricsView()
             .environment(playerViewModel)
         
         let hostingView = NSHostingView(rootView: contentView)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 440, height: 800)
+        hostingView.frame = NSRect(x: 0, y: 0, width: 440, height: 750)
         
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 440, height: 800),
+        let window = LyricsWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 750),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -65,7 +83,6 @@ final class LyricsWindowController {
         window.title = String(localized: "lyrics_window_title")
         window.contentView = hostingView
         window.isReleasedWhenClosed = false
-        window.center()
         
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
@@ -73,6 +90,31 @@ final class LyricsWindowController {
         window.isMovableByWindowBackground = true
         window.standardWindowButton(.zoomButton)?.isEnabled = false
         window.standardWindowButton(.zoomButton)?.isHidden = true
+        
+        let main = resolveMainWindow()
+        let coordinator = LyricsWindowDockCoordinator(mainWindow: main, lyricsWindow: window)
+        window.dockCoordinator = coordinator
+        self.dockCoordinator = coordinator
+        
+        // 初始位置：如果主窗口可见且屏幕有空位，默认吸附到主窗口右侧（空间不足则左侧，都不足则居中）
+        if let main, main.isVisible, !main.isMiniaturized, let screen = main.screen ?? NSScreen.main {
+            let screenFrame = screen.visibleFrame
+            let rightX = main.frame.maxX
+            let leftX = main.frame.minX - 440
+            let targetY = main.frame.maxY - 750
+            
+            if rightX + 440 <= screenFrame.maxX {
+                window.setFrameOrigin(NSPoint(x: rightX, y: targetY))
+                coordinator.dock(edge: .right)
+            } else if leftX >= screenFrame.minX {
+                window.setFrameOrigin(NSPoint(x: leftX, y: targetY))
+                coordinator.dock(edge: .left)
+            } else {
+                window.center()
+            }
+        } else {
+            window.center()
+        }
         
         setupAlwaysOnTopObserver(for: window)
         
@@ -82,6 +124,8 @@ final class LyricsWindowController {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
+                self?.dockCoordinator?.cleanup()
+                self?.dockCoordinator = nil
                 self?.window = nil
             }
         }
@@ -93,7 +137,9 @@ final class LyricsWindowController {
     private func setupAlwaysOnTopObserver(for window: NSWindow) {
         withObservationTracking {
             let alwaysOnTop = SettingsManager.shared.lyricsAlwaysOnTop
-            window.level = alwaysOnTop ? .floating : .normal
+            if self.dockCoordinator?.isDocked != true {
+                window.level = alwaysOnTop ? .floating : .normal
+            }
         } onChange: { [weak self, weak window] in
             Task { @MainActor in
                 guard let window else { return }
