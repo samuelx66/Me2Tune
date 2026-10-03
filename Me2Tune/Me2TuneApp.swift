@@ -56,7 +56,7 @@ struct Me2TuneApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.automatic)
-        .defaultSize(width: 495, height: 800)
+        .defaultSize(width: 495, height: 750)
         .defaultPosition(.center)
         .modelContainer(DataService.shared.modelContainer)
         .commands {

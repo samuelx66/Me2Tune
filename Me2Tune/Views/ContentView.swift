@@ -44,7 +44,7 @@ struct ContentView: View {
             MigrationFailedView()
         } else {
             mainView
-                .frame(minHeight: 800, maxHeight: .infinity)
+                .frame(minHeight: 750, maxHeight: .infinity)
                 .preferredColorScheme(.dark)
                 .onDrop(of: [.fileURL], isTargeted: $isDragging) { providers in
                     handleDrop(providers: providers)
@@ -112,11 +112,8 @@ struct ContentView: View {
                     }
                 }
             )
-            .frame(height: 70)
+            .frame(height: 60)
             .padding(.horizontal, 12)
-            
-            Spacer()
-                .frame(height: 18)
             
             VinylSectionView(
                 artwork: currentArtwork,
@@ -126,7 +123,7 @@ struct ContentView: View {
                 isWindowVisible: isFullModeActive,
                 isRestoring: isRestoring
             )
-            .frame(height: 160)
+            .frame(height: 137)
             .padding(.horizontal, 12)
             
             ControlSectionView(
@@ -383,7 +380,7 @@ private struct MigrationFailedView: View {
             .buttonStyle(.borderedProminent)
         }
         .padding(40)
-        .frame(minWidth: 400, minHeight: 800)
+        .frame(minWidth: 400, minHeight: 750)
         .preferredColorScheme(.dark)
     }
 }

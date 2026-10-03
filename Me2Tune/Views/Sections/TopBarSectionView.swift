@@ -34,11 +34,11 @@ struct TopBarSectionView: View {
             #endif
                 
             searchButton
-                .offset(y: -14)
+                .offset(y: -10)
                 .padding(.trailing, 8)
                 
             rotationToggle
-                .offset(y: -14)
+                .offset(y: -10)
                 .padding(.trailing, 12)
         }
         .frame(height: 50)
