@@ -248,17 +248,7 @@ final class PlaylistManager {
             var isDirectory: ObjCBool = false
             if fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) {
                 if isDirectory.boolValue {
-                    if let enumerator = fileManager.enumerator(
-                        at: url,
-                        includingPropertiesForKeys: [.isRegularFileKey],
-                        options: [.skipsHiddenFiles]
-                    ) {
-                        while let fileURL = enumerator.nextObject() as? URL {
-                            if AudioFileSupport.isSupportedAudioFile(fileURL) {
-                                allAudioURLs.append(fileURL)
-                            }
-                        }
-                    }
+                    allAudioURLs.append(contentsOf: AudioFileSupport.scanAudioFiles(in: url))
                 } else if AudioFileSupport.isSupportedAudioFile(url) {
                     allAudioURLs.append(url)
                 }

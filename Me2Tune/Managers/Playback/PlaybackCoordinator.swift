@@ -290,6 +290,20 @@ final class PlaybackCoordinator {
         }
     }
 
+    func removeTracksFromPlaylist(urls: Set<URL>) {
+        guard !urls.isEmpty else { return }
+        let pathsToRemove = Set(urls.map { $0.standardizedFileURL.path })
+
+        let matchingIndices = playlistManager.tracks.enumerated()
+            .filter { pathsToRemove.contains($0.element.url.standardizedFileURL.path) }
+            .map(\.offset)
+            .sorted(by: >)
+
+        for index in matchingIndices {
+            removeTrackFromPlaylist(at: index)
+        }
+    }
+
     func clearPlaylist() {
         let isClearingCurrentSource = (playbackStateManager.playingSource == .playlist)
 

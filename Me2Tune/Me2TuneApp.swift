@@ -31,6 +31,8 @@ struct Me2TuneApp: App {
         let viewModel = PlayerViewModel(coordinator: coordinator)
         _playerViewModel = State(wrappedValue: viewModel)
 
+        MusicSourceManager.shared.configure(playerViewModel: viewModel)
+
         logger.debug("✅ Me2TuneApp initialized - @Observable architecture")
     }
 

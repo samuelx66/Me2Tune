@@ -182,6 +182,10 @@ final class PlayerViewModel {
         coordinator.removeTrackFromPlaylist(at: index)
     }
 
+    func removeTracksFromPlaylist(urls: Set<URL>) {
+        coordinator.removeTracksFromPlaylist(urls: urls)
+    }
+
     func clearPlaylist() {
         coordinator.clearPlaylist()
     }
