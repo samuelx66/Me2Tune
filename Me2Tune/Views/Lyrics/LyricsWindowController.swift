@@ -75,7 +75,7 @@ final class LyricsWindowController {
         
         let window = LyricsWindow(
             contentRect: NSRect(x: 0, y: 0, width: 440, height: 750),
-            styleMask: [.titled, .closable, .miniaturizable],
+            styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
@@ -87,7 +87,7 @@ final class LyricsWindowController {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.backgroundColor = NSColor(ThemeManager.shared.currentTheme.colors.mainBackground)
-        window.isMovableByWindowBackground = true
+        window.isMovableByWindowBackground = false
         window.standardWindowButton(.zoomButton)?.isEnabled = false
         window.standardWindowButton(.zoomButton)?.isHidden = true
         
@@ -101,16 +101,24 @@ final class LyricsWindowController {
             let screenFrame = screen.visibleFrame
             let rightX = main.frame.maxX
             let leftX = main.frame.minX - 440
-            let targetY = main.frame.maxY - 750
+            let targetY = main.frame.maxY - window.frame.height
             
             if rightX + 440 <= screenFrame.maxX {
-                window.setFrameOrigin(NSPoint(x: rightX, y: targetY))
-                coordinator.dock(edge: .right)
+                window.setInitialFrameOrigin(NSPoint(x: rightX, y: targetY))
+                coordinator.dock(edge: .right, notify: false)
             } else if leftX >= screenFrame.minX {
-                window.setFrameOrigin(NSPoint(x: leftX, y: targetY))
-                coordinator.dock(edge: .left)
+                window.setInitialFrameOrigin(NSPoint(x: leftX, y: targetY))
+                coordinator.dock(edge: .left, notify: false)
+            } else if screenFrame.width >= 495 + 440 {
+                // 屏幕宽度足以容纳双面板，自适应微调主窗口位置留出右侧空间并吸附
+                let newMainX = screenFrame.minX + max(0, (screenFrame.width - 495 - 440) / 2)
+                main.setFrameOrigin(NSPoint(x: newMainX, y: main.frame.minY))
+                window.setInitialFrameOrigin(NSPoint(x: main.frame.maxX, y: targetY))
+                coordinator.dock(edge: .right, notify: false)
             } else {
-                window.center()
+                // 极窄屏幕兜底吸附在右侧
+                window.setInitialFrameOrigin(NSPoint(x: rightX, y: targetY))
+                coordinator.dock(edge: .right, notify: false)
             }
         } else {
             window.center()
@@ -130,7 +138,8 @@ final class LyricsWindowController {
             }
         }
         
-        window.makeKeyAndOrderFront(nil)
+        window.orderFront(nil)
+        main?.makeKey()
         self.window = window
     }
     

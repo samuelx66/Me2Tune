@@ -102,6 +102,11 @@ struct Me2TuneApp: App {
         // ✅ 设置歌词窗口控制器
         LyricsWindowController.shared.setup(playerViewModel: playerViewModel)
 
+        // ✅ 默认打开程序时，歌词面板也是打开并且是吸附状态
+        DispatchQueue.main.async {
+            LyricsWindowController.shared.show()
+        }
+
         logger.info("🚀 App initialization complete - @Observable architecture active")
     }
 }

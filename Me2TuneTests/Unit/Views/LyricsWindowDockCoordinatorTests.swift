@@ -140,4 +140,48 @@ struct LyricsWindowDockCoordinatorTests {
         
         #expect(lyrics.frame.origin.x == 100 + 545)
     }
+    
+    @Test("通知发送：磁吸触发时发送 lyricsWindowDidDock 通知且包含吸附边")
+    func testDockNotificationPostedWithEdge() {
+        let main = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 495, height: 750), styleMask: [.titled], backing: .buffered, defer: false)
+        let lyrics = LyricsWindow(contentRect: NSRect(x: 800, y: 100, width: 440, height: 750), styleMask: [.titled], backing: .buffered, defer: false)
+        main.orderFront(nil)
+        lyrics.orderFront(nil)
+        
+        let coordinator = LyricsWindowDockCoordinator(mainWindow: main, lyricsWindow: lyrics)
+        lyrics.dockCoordinator = coordinator
+        
+        var receivedEdge: LyricsDockEdge?
+        let observer = NotificationCenter.default.addObserver(
+            forName: .lyricsWindowDidDock,
+            object: coordinator,
+            queue: .main
+        ) { notification in
+            receivedEdge = notification.userInfo?["edge"] as? LyricsDockEdge
+        }
+        
+        lyrics.setFrameOrigin(NSPoint(x: 605, y: 105))
+        #expect(coordinator.isDocked)
+        #expect(receivedEdge == .right)
+        
+        NotificationCenter.default.removeObserver(observer)
+    }
+    
+    @Test("顶部对齐：吸附时歌词面板顶部与主面板顶部严格对齐")
+    func testTopAlignmentWhenDocked() {
+        let main = NSWindow(contentRect: NSRect(x: 200, y: 150, width: 495, height: 750), styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView], backing: .buffered, defer: false)
+        let lyrics = LyricsWindow(contentRect: NSRect(x: 800, y: 150, width: 440, height: 750), styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView], backing: .buffered, defer: false)
+        main.orderFront(nil)
+        lyrics.orderFront(nil)
+        
+        let coordinator = LyricsWindowDockCoordinator(mainWindow: main, lyricsWindow: lyrics)
+        lyrics.dockCoordinator = coordinator
+        
+        // 拖动靠近右侧（Y 坐标略有偏差 15 pt，在 28 pt 阈值内）
+        lyrics.setFrameOrigin(NSPoint(x: main.frame.maxX + 10, y: 150 + 15))
+        
+        #expect(coordinator.isDocked)
+        #expect(lyrics.frame.maxY == main.frame.maxY)
+        #expect(lyrics.frame.origin.y == main.frame.origin.y)
+    }
 }

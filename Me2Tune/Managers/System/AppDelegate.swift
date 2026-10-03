@@ -250,6 +250,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             window.makeKeyAndOrderFront(nil)
             windowStateMonitor?.forceSetState(.activeFocused)
             logger.info("🖥️ Switched to Full mode")
+            
+            // 恢复全屏模式时保持歌词面板打开并吸附
+            DispatchQueue.main.async {
+                LyricsWindowController.shared.show()
+            }
         } else {
             logger.error("❌ Full mode window not available")
         }

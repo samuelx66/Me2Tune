@@ -17,6 +17,12 @@ struct LyricsView: View {
     @State private var errorMessage: String?
     @State private var showLyricsSettings = false
     
+    // 吸附撞击微弹动效
+    @State private var snapBumpOffset: CGFloat = 0
+    @State private var snapScaleX: CGFloat = 1.0
+    @State private var dockHighlightOpacity: Double = 0.0
+    @State private var dockedEdge: LyricsDockEdge = .right
+    
     @State private var updateTimer: Timer?
 
     @AppStorage(LyricsDisplaySettingsKey.highlightSize)
@@ -86,6 +92,18 @@ struct LyricsView: View {
                 contentSection
                     .frame(maxHeight: .infinity)
             }
+            .offset(x: snapBumpOffset)
+            .scaleEffect(
+                x: snapScaleX,
+                y: 1.0,
+                anchor: dockedEdge == .right ? .leading : .trailing
+            )
+            
+            // 吸附接缝边缘微光闪现指示条
+            if dockHighlightOpacity > 0.001 {
+                dockSeamHighlight(edge: dockedEdge)
+                    .opacity(dockHighlightOpacity)
+            }
         }
         .frame(width: 440, height: 750)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showLyricsSettings)
@@ -93,6 +111,11 @@ struct LyricsView: View {
             @Bindable var settings = SettingsManager.shared
             Toggle(isOn: $settings.lyricsAlwaysOnTop) {
                 Label(String(localized: "always_on_top"), systemImage: "pin.fill")
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lyricsWindowDidDock)) { notification in
+            if let edge = notification.userInfo?["edge"] as? LyricsDockEdge {
+                triggerMagneticBump(edge: edge)
             }
         }
         .task(id: playerViewModel.currentTrack?.id) {
@@ -110,6 +133,65 @@ struct LyricsView: View {
         .onDisappear {
             stopUpdateTimer()
         }
+    }
+    
+    // MARK: - Dock Animation Helpers
+    
+    private func triggerMagneticBump(edge: LyricsDockEdge) {
+        dockedEdge = edge
+        let bumpAmount: CGFloat = (edge == .right) ? -6.0 : 6.0
+        
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            snapBumpOffset = bumpAmount
+            snapScaleX = 0.985
+            dockHighlightOpacity = 0.85
+        }
+        
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                withAnimation(.spring(response: 0.30, dampingFraction: 0.52)) {
+                    snapBumpOffset = 0
+                    snapScaleX = 1.0
+                }
+                withAnimation(.easeOut(duration: 0.40)) {
+                    dockHighlightOpacity = 0.0
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func dockSeamHighlight(edge: LyricsDockEdge) -> some View {
+        HStack {
+            if edge == .right {
+                seamGlowBar
+                Spacer()
+            } else {
+                Spacer()
+                seamGlowBar
+            }
+        }
+        .allowsHitTesting(false)
+    }
+    
+    private var seamGlowBar: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        themeColors.accent.opacity(0.0),
+                        themeColors.accent.opacity(0.95),
+                        themeColors.accent.opacity(0.0)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .frame(width: 3)
+            .blur(radius: 1.5)
+            .padding(.vertical, 20)
     }
     
     // MARK: - Header Section
