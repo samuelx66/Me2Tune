@@ -24,6 +24,7 @@ struct LyricsView: View {
     @State private var dockedEdge: LyricsDockEdge = .right
     
     @State private var updateTimer: Timer?
+    @State private var ignoreTimerUntil: Date = .distantPast
 
     @AppStorage(LyricsDisplaySettingsKey.highlightSize)
     private var highlightSizeRaw = LyricsHighlightSize.s18.rawValue
@@ -334,7 +335,10 @@ struct LyricsView: View {
                             lineIndex: index,
                             currentLineIndex: currentLineIndex,
                             displaySettings: displaySettings,
-                            theme: themeColors
+                            theme: themeColors,
+                            onSeek: { line, index in
+                                seekToLine(line, at: index)
+                            }
                         )
                         .id(index)
                         .padding(.vertical, displaySettings.blockVerticalPadding)
@@ -576,6 +580,43 @@ struct LyricsView: View {
         }
     }
     
+    // MARK: - Seeking
+    
+    /// 计算某歌词行对应的实际跳转播放时间戳（已包含用户设置的时间偏移补偿与有效区间限制）
+    static func calculateSeekTime(
+        for line: LyricLine,
+        offset: Double,
+        duration: Double? = nil
+    ) -> TimeInterval {
+        let maxDuration = duration ?? .infinity
+        return max(0, min(line.timestamp + offset + 0.001, maxDuration))
+    }
+
+    private func seekToLine(_ line: LyricLine, at index: Int) {
+        let duration = playerViewModel.currentTrack?.duration
+        let targetTime = Self.calculateSeekTime(
+            for: line,
+            offset: displaySettings.timeOffset.offsetValue,
+            duration: duration
+        )
+        
+        // 1. 立即乐观更新当前高亮行
+        withAnimation(.easeOut(duration: 0.22)) {
+            currentLineIndex = index
+        }
+        
+        // 2. 短暂抑制定时器更新，防止底层解码延迟导致的高亮反向回跳
+        ignoreTimerUntil = Date().addingTimeInterval(0.5)
+        
+        // 3. 触发底层音频精准寻道
+        playerViewModel.seek(to: targetTime)
+        
+        // 4. 若当前处于暂停状态，自动恢复播放
+        if !playerViewModel.isPlaying {
+            playerViewModel.play()
+        }
+    }
+    
     // MARK: - Update Current Line
 
     /// 在给定歌词行列表中，找到最后一个 timestamp ≤ adjustedTime 的行索引
@@ -603,6 +644,7 @@ struct LyricsView: View {
     }
 
     private func updateCurrentLine(time: TimeInterval) {
+        guard Date() >= ignoreTimerUntil else { return }
         let newIndex = Self.findCurrentLineIndex(
             in: lyricLines,
             at: time,
