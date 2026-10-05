@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct TopBarSectionView: View {
+    var currentTrack: AudioTrack? = nil
     @Binding var isRotationEnabled: Bool
     let audioFormat: AudioFormat
     let onSearchTapped: () -> Void
@@ -48,26 +49,75 @@ struct TopBarSectionView: View {
     
     private var infoSection: some View {
         HStack(spacing: 10) {
-            Image(systemName: "headphones")
+            Image(systemName: currentTrack != nil ? "music.note" : "headphones")
                 .foregroundColor(.secondaryText)
                 .font(.title3)
             
             VStack(alignment: .leading, spacing: 3) {
-                Text("Me2Tune")
-                    .font(.system(size: 14, weight: .medium))
+                Text(trackTitle)
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.primaryText)
-                Text(audioFormat.formattedString)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                
+                Text(trackSubtitle)
                     .font(.system(size: 11))
                     .foregroundColor(.secondaryText)
                     .lineLimit(1)
+                    .truncationMode(.tail)
             }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: 320, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.infoBackground)
         )
+        .help(fullTooltipText)
+    }
+
+    private var trackTitle: String {
+        if let track = currentTrack, !track.title.isEmpty {
+            return track.title
+        }
+        return "Me2Tune"
+    }
+
+    private var trackSubtitle: String {
+        guard let track = currentTrack else {
+            let format = audioFormat.formattedString
+            return format.isEmpty ? String(localized: "ready_to_play") : format
+        }
+        
+        let artist = track.artist ?? ""
+        let format = audioFormat.formattedString
+        
+        if !artist.isEmpty && !format.isEmpty {
+            return "\(artist) • \(format)"
+        } else if !artist.isEmpty {
+            return artist
+        } else if !format.isEmpty {
+            return format
+        } else {
+            return String(localized: "ready_to_play")
+        }
+    }
+
+    private var fullTooltipText: String {
+        guard let track = currentTrack else { return "Me2Tune" }
+        var parts: [String] = [track.title]
+        if let artist = track.artist, !artist.isEmpty {
+            parts.append(artist)
+        }
+        if let album = track.albumTitle, !album.isEmpty {
+            parts.append(album)
+        }
+        let format = audioFormat.formattedString
+        if !format.isEmpty {
+            parts.append(format)
+        }
+        return parts.joined(separator: " • ")
     }
     
     // MARK: - Rotation Toggle

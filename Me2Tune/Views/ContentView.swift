@@ -104,6 +104,7 @@ struct ContentView: View {
         
         return VStack(spacing: 0) {
             TopBarSectionView(
+                currentTrack: currentTrack,
                 isRotationEnabled: $isRotationEnabled,
                 audioFormat: currentFormat,
                 onSearchTapped: {
