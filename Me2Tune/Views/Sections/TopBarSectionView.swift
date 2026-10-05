@@ -12,6 +12,7 @@ struct TopBarSectionView: View {
     @Binding var isRotationEnabled: Bool
     let audioFormat: AudioFormat
     let onSearchTapped: () -> Void
+    var onShowTagEditor: ((AudioTrack) -> Void)? = nil
         
     var body: some View {
         HStack {
@@ -74,6 +75,15 @@ struct TopBarSectionView: View {
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.infoBackground)
         )
+        .contextMenu {
+            if let currentTrack {
+                Button {
+                    onShowTagEditor?(currentTrack)
+                } label: {
+                    Label(String(localized: "show_track_info", defaultValue: "显示简介"), systemImage: "info.circle")
+                }
+            }
+        }
         .help(fullTooltipText)
     }
 

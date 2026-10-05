@@ -2083,6 +2083,22 @@
         }
       }
     },
+    "show_track_info": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get Info"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示简介"
+          }
+        }
+      }
+    },
     "stat_albums": {
       "extractionState": "extracted_with_value",
       "localizations": {

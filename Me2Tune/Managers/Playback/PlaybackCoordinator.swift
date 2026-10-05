@@ -243,6 +243,26 @@ final class PlaybackCoordinator {
         if hasSessionSnapshot || !playlistManager.isEmpty {
             NowPlayingService.shared.setPlaceholderInfo()
         }
+
+        NotificationCenter.default.addObserver(
+            forName: .audioTrackMetadataDidUpdate,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self,
+                  let url = notification.userInfo?["url"] as? URL,
+                  let metadata = notification.userInfo?["metadata"] as? DetailedAudioMetadata else { return }
+            self.playbackStateManager.updateTrackMetadata(for: url, metadata: metadata)
+            if self.playbackStateManager.currentTrack?.url == url {
+                Task { @MainActor in
+                    let artwork = await ArtworkCacheService.shared.artwork(for: url)
+                    self.currentArtwork = artwork
+                    self.updateNowPlayingInfo()
+                    self.playerCore.updateDockIcon(artwork)
+                }
+            }
+        }
+
         logger.debug("PlaybackCoordinator initialized")
     }
 

@@ -33,6 +33,7 @@ struct ContentView: View {
     @State private var exportAlbumName = ""
     @State private var showClearPlaylistConfirm = false
     @State private var showClearCollectionsConfirm = false
+    @State private var tagEditorTrack: AudioTrack?
     
     // Full 窗口是否处于激活状态（非 Mini 模式）
     private var isFullModeActive: Bool {
@@ -58,6 +59,20 @@ struct ContentView: View {
                     onClearPlaylist: playerViewModel.clearPlaylist,
                     onClearCollections: collectionManager.clearAllAlbums
                 ))
+                .sheet(item: $tagEditorTrack) { track in
+                    AudioTagEditorView(trackURL: track.url) {
+                        tagEditorTrack = nil
+                    }
+                }
+                .background {
+                    Button("") {
+                        if let track = playerViewModel.currentTrack {
+                            tagEditorTrack = track
+                        }
+                    }
+                    .keyboardShortcut("i", modifiers: .command)
+                    .opacity(0)
+                }
                 .onChange(of: playerViewModel.currentTrack?.id) { _, newID in
                     updateAlbumGlow(newID: newID)
                 }
@@ -111,6 +126,9 @@ struct ContentView: View {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         showSearchOverlay = true
                     }
+                },
+                onShowTagEditor: { track in
+                    tagEditorTrack = track
                 }
             )
             .frame(height: 60)
@@ -157,7 +175,10 @@ struct ContentView: View {
                 onClearPlaylist: { showClearPlaylistConfirm = true },
                 onClearCollections: { showClearCollectionsConfirm = true },
                 onOpenFilePicker: openFilePicker,
-                onPlaylistDrop: handlePlaylistDrop
+                onPlaylistDrop: handlePlaylistDrop,
+                onShowTagEditor: { track in
+                    tagEditorTrack = track
+                }
             )
             .padding(.horizontal, 12)
             .padding(.top, 12)
